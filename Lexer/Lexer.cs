@@ -42,7 +42,7 @@ namespace Lexer
                         }
                     }
                 }
-                else if (!char.IsWhiteSpace(file[i]))
+                if (!char.IsWhiteSpace(file[i]))
                 {
                     currentToken.Value = file[i].ToString();
                     if (char.IsLetter(file[i]))
