@@ -14,14 +14,17 @@ namespace Lexer
         private List<Token> identifiers;
         private List<Token> constants;
         private List<Token> resedvedWords;
+        private List<Token> delimeters;
 
 
         public void Parse(string file)
         {
             fileAsTokens = new List<Token>();
+
             identifiers = new List<Token>();
             constants = new List<Token>();
             resedvedWords = new List<Token>();
+            delimeters = new List<Token>();
 
             Token currentToken;
             string smb = "";
@@ -100,6 +103,7 @@ namespace Lexer
                         }
 
                         currentToken.Type = TokenType.Constant;
+                        constants.Add(currentToken);
                     }
                     else if (file[i] == '\"')
                     {
@@ -114,11 +118,14 @@ namespace Lexer
                         i++;
 
                         currentToken.Type = TokenType.Constant;
+                        constants.Add(currentToken);
                     }
                     else
                     {
                         i++;
                         currentToken.Type = TokenType.Delimeter;
+                        delimeters.Add(currentToken);
+
                     }
 
                     Console.Write(currentToken.Type.ToString()[0] + "_" + currentToken.Value + ' ');
