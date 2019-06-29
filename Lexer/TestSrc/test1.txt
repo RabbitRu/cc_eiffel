@@ -1,0 +1,30 @@
+note
+	description: "project application root class"
+	date: "$Date$"
+	revision: "$Revision$"
+
+class
+	APPLICATION
+
+inherit
+	ARGUMENTS_32
+
+create
+	make
+
+feature {NONE} -- Initialization
+
+	make
+			-- Run application.
+		do
+			--| Add your code here
+			my_real := 33.11e10
+			my_real := my_real + 6
+			my_integer := 0x3_33
+			print ("Hello Eiffel World!%N")
+			print (my_real)
+			--print (my_real)
+		end
+	my_real: REAL
+	my_integer: INTEGER
+end
