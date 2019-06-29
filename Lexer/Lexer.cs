@@ -33,7 +33,7 @@ namespace Lexer
                 {
                     if (i < file.Length - 1 & file[i + 1] == '-') //Это комментарий, пропускаем
                     {
-                        while (i < file.Length & file[i] != '\n')
+                        while (i < file.Length && file[i] != '\n')
                         {
                             i++;
                         }
@@ -41,12 +41,11 @@ namespace Lexer
                 }
                 else if (!char.IsWhiteSpace(file[i]))
                 {
-                    char temp = file[i];
                     currentToken.Value = file[i].ToString();
                     if (char.IsLetter(file[i]))
                     {
                         i++;
-                        while (i < file.Length & char.IsLetterOrDigit(file[i]) | char.IsSymbol(file[i]))
+                        while (i < file.Length && (char.IsLetterOrDigit(file[i]) | file[i] == '_'))
                         {
                             currentToken.Value += file[i];
                             i++;
@@ -66,33 +65,33 @@ namespace Lexer
                     else if (char.IsNumber(file[i]))
                     {
                         i++;
-                        if (i < file.Length & isBase(file[i]))
+                        if (i < file.Length && isBase(file[i]))
                         {
                             currentToken.Value += file[i];
                             i++;
                         }
 
-                        while (i < file.Length & isNumberEx(file[i]))
+                        while (i < file.Length && isNumberEx(file[i]))
                         {
                             currentToken.Value += file[i];
                             i++;
                         }
 
-                        if (i < file.Length & file[i] == '.')
+                        if (i < file.Length && file[i] == '.')
                         {
                             currentToken.Value += file[i];
                             i++;
-                            while (i < file.Length & isNumberEx(file[i]))
+                            while (i < file.Length && isNumberEx(file[i]))
                             {
                                 currentToken.Value += file[i];
                                 i++;
                             }
 
-                            if (i < file.Length & file[i] == 'e')
+                            if (i < file.Length && file[i] == 'e')
                             {
                                 currentToken.Value += file[i];
                                 i++;
-                                while (i < file.Length & isNumberEx(file[i]))
+                                while (i < file.Length && isNumberEx(file[i]))
                                 {
                                     currentToken.Value += file[i];
                                     i++;
@@ -105,7 +104,7 @@ namespace Lexer
                     else if (file[i] == '\"')
                     {
                         i++;
-                        while (i < file.Length & (file[i] != '\"' | file[i - 1] == '\\'))
+                        while (i < file.Length && (file[i] != '\"' | file[i - 1] == '\\'))
                         {
                             currentToken.Value += file[i];
                             i++;
@@ -122,10 +121,12 @@ namespace Lexer
                         currentToken.Type = TokenType.Delimeter;
                     }
 
+                    Console.Write(currentToken.Type.ToString()[0] + "_" + currentToken.Value + ' ');
                     fileAsTokens.Add(currentToken);
                 }
                 else
                 {
+                    Console.Write(file[i]);
                     i++;
                 }
 
@@ -134,7 +135,7 @@ namespace Lexer
             //Вывод результатов
             foreach (var token in fileAsTokens)
             {
-                Console.Write(token.Type + "_" + token.Value + ' ');
+                //Console.Write(token.Type + "_" + token.Value + ' ');
             }
         }
 
@@ -148,6 +149,12 @@ namespace Lexer
         {
             char[] hexNumber = new[] {'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F', '_'};
             return hexNumber.Any(x => x.Equals(c)) || char.IsNumber(c);
+        }
+
+        private bool isDelimeter(char c)
+        {
+            char[] dlm = new[] {'(',')','}','{',']','[' };
+            return dlm.Any(x => x.Equals(c));
         }
     }
 }
