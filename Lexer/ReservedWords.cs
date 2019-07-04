@@ -85,5 +85,29 @@ namespace Lexer
             "Void",
             "when",
             "xor"};
+
+        public static string[] Operators =
+        {
+            "not",
+            "+",
+            "-",
+            "*",
+            "/",
+            "//",
+            "\\",
+            "^",
+            "..",
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "and",
+            "or",
+            "xor",
+            "and then",
+            "or else",
+            "implies",
+            ":="
+        };
     }
 }

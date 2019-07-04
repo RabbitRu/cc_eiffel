@@ -1,66 +1,165 @@
 note
-	description: "project application root class"
-	date: "$Date$"
-	revision: "$Revision$"
-
-class
-	APPLICATION
-
-inherit
-	ARGUMENTS_32
-
-create
-	make
-
-feature {NONE} -- Initialization
-
-	make
-			-- Run application.
-		do
-			--| Add your code here
-			my_real := 33.11e10
-			my_real := my_real + 6
-			my_integer := 0x3_33
-			print ("Hello Eiffel World!%N")
-			print (my_real)
-			--print (my_real)
-		end
-	my_real: REAL
-	my_integer: INTEGER
-end
+    description: "test_project application root class"
+    date: "$Date$"
+    revision: "$Revision$"
 
 class
     APPLICATION
 
+inherit
+    ARGUMENTS_32
+
 create
     make
 
-feature
-       make
-            -- Run application.
-        do
-            across primes_through (100) as ic loop print (ic.item.out + " ") end
-        end
+feature {NONE} -- Initialization
 
-    primes_through (a_limit: INTEGER): LINKED_LIST [INTEGER]
-            -- Prime numbers through `a_limit'
-        require
-            valid_upper_limit: a_limit >= 2
+    make
+            -- Run application.
         local
-            l_tab: ARRAY [BOOLEAN]
+            str1 : STRING
+            str2 : STRING
+            a, b: INTEGER
+            arr1, arr2, arr3: ARRAY[INTEGER]
+            i : INTEGER
         do
-            create Result.make
-            create l_tab.make_filled (True, 2, a_limit)
-            across
-                l_tab as ic
+            --| Add your code here
+            --print ("Hello Eiffel World!%N")
+
+            create arr1.make_filled(0, 0, 3);
+            create arr2.make_filled(1, 0, 5);
+
+            print("arr1.length = ")
+            Io.put_integer (arr1.count)
+            Io.new_line
+            from
+                i := 0
+            until
+                i >= arr1.count
             loop
-                if ic.item then
-                    Result.extend (ic.target_index)
-                    across ((ic.target_index * ic.target_index) |..| l_tab.upper).new_cursor.with_step (ic.target_index) as id
-                    loop
-                        l_tab [id.item] := False
-                    end
+                Io.put_integer (arr1[i])
+                print(" ")
+                i := i+1
+            end
+            Io.new_line
+
+            print("arr2.length = ");
+            Io.put_integer (arr2.count)
+            Io.new_line
+            from
+                i := 0
+            until
+                i >= arr2.count
+            loop
+                Io.put_integer (arr2[i])
+                print(" ")
+                i := i+1
+            end
+            Io.new_line
+            Io.new_line
+
+            print("arr1 := arr2");
+            Io.new_line
+            --print("arr2 := arr3");
+            --Io.new_line
+
+            arr1 := arr2;
+            --arr2 := arr3;
+            arr1[0] := 1234;
+            arr2[1] := 4321;
+
+            print("arr1.length = ")
+            Io.put_integer (arr1.count)
+            Io.new_line
+            from
+                i := 0
+            until
+                i >= arr1.count
+            loop
+                Io.put_integer (arr1[i])
+                print(" ")
+                i := i+1
+            end
+            Io.new_line
+
+            print("arr2.length = ");
+            Io.put_integer (arr2.count)
+            Io.new_line
+            from
+                i := 0
+            until
+                i >= arr2.count
+            loop
+                Io.put_integer (arr2[i])
+                print(" ")
+                i := i+1
+            end
+            Io.new_line
+
+
+            --strings
+            str1 := ":3";
+            str2 := "Meow";
+            print("str1: ");
+            Io.put_string (str1);
+            Io.new_line
+            print("str2: ");
+            Io.put_string (str2);
+            Io.new_line
+            str1 := str2;
+            str2 := ":33";
+            print("str1: ");
+            Io.put_string (str1);
+            Io.new_line
+            print("str2: ");
+            Io.put_string (str2);
+            Io.new_line
+
+            --ints
+
+            a := 10;
+            b := 5;
+            print("a: ");
+            Io.put_integer (a);
+            Io.new_line
+            print("b: ");
+            Io.put_integer (b);
+            Io.new_line
+            a := b;
+            b := 10;
+            print("a: ");
+            Io.put_integer (a);
+            Io.new_line
+            print("b: ");
+            Io.put_integer (b);
+            Io.new_line
+            Io.new_line
+
+            print_meow(-3)
+            Io.new_line
+            print_meow(7)
+
+        end
+feature {NONE}
+    j : INTEGER
+
+    print_meow (more : INTEGER)
+        do
+            if more <= 0
+            then
+                Io.put_string (":c")
+            else
+                Io.put_string ("Me")
+                from
+                    j := more
+                until
+                    j <= 0
+                loop
+                    Io.put_string ("o")
+                    j := j-1
                 end
+                Io.put_string ("w")
             end
         end
+
 end

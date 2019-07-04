@@ -11,7 +11,8 @@ namespace Lexer
         Identifier,
         ReservedWord,
         Constant,
-        Delimeter
+        Delimeter,
+        Operator
 
     }
 }

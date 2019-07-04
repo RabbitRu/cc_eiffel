@@ -42,6 +42,7 @@ namespace Lexer
                         }
                     }
                 }
+
                 if (!char.IsWhiteSpace(file[i]))
                 {
                     currentToken.Value = file[i].ToString();
@@ -120,6 +121,10 @@ namespace Lexer
                         currentToken.Type = TokenType.Constant;
                         constants.Add(currentToken);
                     }
+                    /*else if (file[i] == '-' || file[i] == '+')
+                    {
+
+                    }*/
                     else
                     {
                         i++;
@@ -144,6 +149,69 @@ namespace Lexer
             {
                 //Console.Write(token.Type + "_" + token.Value + ' ');
             }
+
+            Console.Write("\n\n");
+            foreach (var token in fileAsTokens)
+            {
+                if (token.Type == TokenType.Delimeter)
+                    Console.Write(" " + token.Value + ' ');
+            }
+
+            fileAsTokens = FindOperators(fileAsTokens);
+
+            Console.Write("\n\n");
+            foreach (var token in fileAsTokens)
+            {
+                if(token.Type == TokenType.Operator)
+                Console.Write(" " + token.Value + ' ');
+            }
+
+            Console.Write("\n\n");
+            foreach (var token in fileAsTokens)
+            {
+                if (token.Type == TokenType.Delimeter)
+                    Console.Write(" " + token.Value + ' ');
+            }
+        }
+
+        public List<Token> FindOperators(List<Token> source)
+        {
+            var modifiedSource = new List<Token>(source);
+            if (modifiedSource.Count < 2)
+                return null;
+            bool skipDouble = false;
+
+            for (int i = 1; i < modifiedSource.Count; i++)
+            {
+                if (modifiedSource[i].Type == TokenType.Delimeter)
+                {
+                    var t = modifiedSource[i - 1].Value + " " + modifiedSource[i].Value;
+                    if (ReservedWords.Operators.Any(x =>
+                        x == (modifiedSource[i - 1].Value + modifiedSource[i].Value) ||
+                        x == (modifiedSource[i - 1].Value + " " + modifiedSource[i].Value)) && !skipDouble)
+                    {
+                        modifiedSource[i - 1].Type = TokenType.Operator;
+                        modifiedSource[i - 1].Value += modifiedSource[i].Value;
+                        modifiedSource.RemoveAt(i);
+                        i--;
+                        skipDouble = true;
+                    }
+                    else if (ReservedWords.Operators.Any(x =>
+                        x == modifiedSource[i].Value))
+                    {
+                        modifiedSource[i].Type = TokenType.Operator;
+                        skipDouble = false;
+                    }
+                    else
+                    {
+                        skipDouble = false;
+                    }
+                }
+                
+
+            }
+
+            return modifiedSource;
         }
 
         private bool isBase(char c)
