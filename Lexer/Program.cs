@@ -14,8 +14,8 @@ namespace Lexer
             var path = @"C:\Users\zombi\Documents\Study\CC\cc_eiffel\Lexer\TestSrc\test1.txt";
             string fileAsString = File.ReadAllText(path); 
             var lexer = new Lexer();
-            lexer.Parse(fileAsString);
-
+            lexer.Parse(fileAsString, true);
+            Console.Read();
         }
     }
 }

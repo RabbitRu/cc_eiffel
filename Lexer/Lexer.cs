@@ -17,7 +17,7 @@ namespace Lexer
         private List<Token> delimeters;
 
 
-        public void Parse(string file)
+        public List<Token> Parse(string file, bool debugPrint)
         {
             fileAsTokens = new List<Token>();
 
@@ -121,10 +121,6 @@ namespace Lexer
                         currentToken.Type = TokenType.Constant;
                         constants.Add(currentToken);
                     }
-                    /*else if (file[i] == '-' || file[i] == '+')
-                    {
-
-                    }*/
                     else
                     {
                         i++;
@@ -133,45 +129,51 @@ namespace Lexer
 
                     }
 
-                    Console.Write(currentToken.Type.ToString()[0] + "_" + currentToken.Value + ' ');
+                    if (debugPrint)
+                        Console.Write(currentToken.Type.ToString()[0] + "_" + currentToken.Value + ' ');
                     fileAsTokens.Add(currentToken);
                 }
                 else
                 {
-                    Console.Write(file[i]);
+                    if(debugPrint)
+                        Console.Write(file[i]);
                     i++;
                 }
 
             }
 
             //Вывод результатов
-            foreach (var token in fileAsTokens)
-            {
-                //Console.Write(token.Type + "_" + token.Value + ' ');
-            }
 
-            Console.Write("\n\n");
-            foreach (var token in fileAsTokens)
+            if (debugPrint)
             {
-                if (token.Type == TokenType.Delimeter)
-                    Console.Write(" " + token.Value + ' ');
+                Console.Write("\n\n");
+                foreach (var token in fileAsTokens)
+                {
+                    if (token.Type == TokenType.Delimeter)
+                        Console.Write(" " + token.Value + ' ');
+                }
             }
 
             fileAsTokens = FindOperators(fileAsTokens);
 
-            Console.Write("\n\n");
-            foreach (var token in fileAsTokens)
+            if (debugPrint)
             {
-                if(token.Type == TokenType.Operator)
-                Console.Write(" " + token.Value + ' ');
+                Console.Write("\n\n");
+                foreach (var token in fileAsTokens)
+                {
+                    if (token.Type == TokenType.Operator)
+                        Console.Write(" " + token.Value + ' ');
+                }
+
+                Console.Write("\n\n");
+                foreach (var token in fileAsTokens)
+                {
+                    if (token.Type == TokenType.Delimeter)
+                        Console.Write(" " + token.Value + ' ');
+                }
             }
 
-            Console.Write("\n\n");
-            foreach (var token in fileAsTokens)
-            {
-                if (token.Type == TokenType.Delimeter)
-                    Console.Write(" " + token.Value + ' ');
-            }
+            return fileAsTokens;
         }
 
         public List<Token> FindOperators(List<Token> source)
@@ -183,12 +185,12 @@ namespace Lexer
 
             for (int i = 1; i < modifiedSource.Count; i++)
             {
-                if (modifiedSource[i].Type == TokenType.Delimeter)
+                if (modifiedSource[i].Type == TokenType.Delimeter || modifiedSource[i].Type == TokenType.ReservedWord)
                 {
                     var t = modifiedSource[i - 1].Value + " " + modifiedSource[i].Value;
                     if (ReservedWords.Operators.Any(x =>
-                        x == (modifiedSource[i - 1].Value + modifiedSource[i].Value) ||
-                        x == (modifiedSource[i - 1].Value + " " + modifiedSource[i].Value)) && !skipDouble)
+                            x == (modifiedSource[i - 1].Value + modifiedSource[i].Value) ||
+                            x == (modifiedSource[i - 1].Value + " " + modifiedSource[i].Value)) && !skipDouble)
                     {
                         modifiedSource[i - 1].Type = TokenType.Operator;
                         modifiedSource[i - 1].Value += modifiedSource[i].Value;
@@ -207,7 +209,7 @@ namespace Lexer
                         skipDouble = false;
                     }
                 }
-                
+
 
             }
 
@@ -228,7 +230,7 @@ namespace Lexer
 
         private bool isDelimeter(char c)
         {
-            char[] dlm = new[] {'(',')','}','{',']','[' };
+            char[] dlm = new[] {'(', ')', '}', '{', ']', '['};
             return dlm.Any(x => x.Equals(c));
         }
     }
