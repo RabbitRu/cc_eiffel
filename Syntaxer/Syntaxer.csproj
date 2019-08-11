@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Nodes\BaseNode.cs" />
     <Compile Include="Nodes\BinaryOperatorNode.cs" />
+    <Compile Include="Nodes\ClassNode.cs" />
     <Compile Include="Nodes\FuncCallNode.cs" />
     <Compile Include="Nodes\FunctionNode.cs" />
     <Compile Include="Nodes\ConstantValueNode.cs" />
