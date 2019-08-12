@@ -15,6 +15,7 @@ namespace Syntaxer
         private int currentTokenNumber = 0;
         private Token currenToken;
         public RootNode Root = new RootNode();
+        private ClassNode classWAddonsGlobal = null;
 
         private Token getNextToken()
         {
@@ -43,6 +44,7 @@ namespace Syntaxer
         public BaseNode ParseExpression()
         {
             BaseNode returnValue = null;
+
             switch (currenToken.Type)
             {
                 case TokenType.Constant:
@@ -55,7 +57,7 @@ namespace Syntaxer
                     returnValue = ParseIdentifier(currenToken);
                     break;
                 case TokenType.ReservedWord:
-                    returnValue = ParseReservedWords(currenToken);
+                    (returnValue, classWAddonsGlobal) = ParseReservedWords(currenToken, classWAddonsGlobal);
                     break;
                 default:
                     getNextToken();
@@ -65,33 +67,42 @@ namespace Syntaxer
             return returnValue;
         }
 
-        private BaseNode ParseReservedWords(Token token)
+        private (BaseNode, ClassNode) ParseReservedWords(Token token, ClassNode classWAddons = null)
         {
             BaseNode returnValue = null;
-            ClassNode classWNotes = new ClassNode();
             switch (token.Value)
             {
-                case "class":
+                case "class"://deferred | expanded | frozen
                     getNextToken();
-                    returnValue = ParseClass(currenToken, classWNotes);
+                    returnValue = ParseClass(currenToken, classWAddons);
+                    break;
+                case "frozen"://headers
+                case "expanded":
+                case "deferred":
+                    classWAddons = classWAddons ?? new ClassNode();
+                    classWAddons.Headers.Add(token.Value);
+                    getNextToken();
                     break;
                 case "note":
                     getNextToken();
-                    classWNotes = new ClassNode();
-                    ParseNote(currenToken, classWNotes.Notes);
+                    classWAddons = classWAddons ?? new ClassNode();
+                    ParseNote(currenToken, classWAddons.Notes);
                     break;
                 default:
                     getNextToken();
                     break;
             }
 
-            return returnValue;
+            return (returnValue, classWAddons);
         }
 
         private BaseNode ParseClass(Token token, ClassNode classWNotes = null)
         {
             ClassNode classN;
             classN = classWNotes ?? new ClassNode();
+
+            classN.Name = token.Value;
+            getNextToken();
 
             while (currenToken != null && currenToken.Value != "end")
             {
@@ -120,12 +131,13 @@ namespace Syntaxer
                         getNextToken();
                         break;
                     default:
-                        getNextToken();
+                        ParseExpression();
                         break;
                 }
 
             }
 
+            classWAddonsGlobal = null;
             return classN;
         }
 

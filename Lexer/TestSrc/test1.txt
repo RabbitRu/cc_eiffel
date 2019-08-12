@@ -3,7 +3,7 @@ note
     date: "$Date$"
     revision: "$Revision$"
 
-class
+frozen class
     APPLICATION
 
 inherit

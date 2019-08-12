@@ -10,12 +10,14 @@ namespace Syntaxer.Nodes
         public List<string> Creators;
         public List<string> Converters;
         public List<string> Features;
+        public List<string> Headers;
         public NoteNode Notes;
         public List<string> Invariant;
 
         public ClassNode()
         {
             Inheritance = new List<string>();
+            Headers = new List<string>();
             Creators = new List<string>();
             Converters = new List<string>();
             Features = new List<string>();
