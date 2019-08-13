@@ -4,19 +4,19 @@ namespace Syntaxer.Nodes
 {
     public class ClassNode : BaseNode
     {
-        public string Name;
-        public string Obsolete;
-        public List<string> Inheritance;
-        public List<string> Creators;
-        public List<string> Converters;
-        public List<string> Features;
-        public List<string> Headers;
-        public NoteNode Notes;
-        public List<string> Invariant;
+        public string Name { get; set; }
+        public string Obsolete { get; set; }
+        public InheritanceNode Inheritance { get; }
+        public List<string> Creators { get; }
+        public List<string> Converters { get; }
+        public List<string> Features { get; }
+        public List<string> Headers { get; }
+        public NoteNode Notes { get; }
+        public List<string> Invariant { get; }
 
         public ClassNode()
         {
-            Inheritance = new List<string>();
+            Inheritance = new InheritanceNode();
             Headers = new List<string>();
             Creators = new List<string>();
             Converters = new List<string>();
@@ -27,14 +27,35 @@ namespace Syntaxer.Nodes
 
         public class NoteNode :BaseNode
         {
-            public List<string> NoteNames;
-            public List<List<string>> NoteContents;
+            public List<string> NoteNames { get; }
+            public List<List<string>> NoteContents { get; }
 
             public NoteNode()
             {
                 NoteNames = new List<string>();
                 NoteContents = new List<List<string>>();
             }
+
+            public void Add(string name, List<string> content)
+            {
+                NoteNames.Add(name);
+                NoteContents.Add(content);
+            }
+        }
+
+
+        public class InheritanceNode : BaseNode
+        {
+            public List<string> NoteNames;
+            public List<List<string>> NoteContents;
+
+            public InheritanceNode()
+            {
+                NoteNames = new List<string>();
+                NoteContents = new List<List<string>>();
+            }
+
+            public bool NonConformance { get; set; } = false;
 
             public void Add(string name, List<string> content)
             {

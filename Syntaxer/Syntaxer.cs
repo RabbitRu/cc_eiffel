@@ -110,6 +110,7 @@ namespace Syntaxer
                 {
                     case "obsolete":
                         getNextToken();
+                        classN.Obsolete = ParseObsolete(currenToken);
                         break;
                     case "note":
                         getNextToken();
@@ -117,6 +118,7 @@ namespace Syntaxer
                         break;
                     case "inheritance":
                         getNextToken();
+                        ParseInheritance(currenToken, classN.Inheritance);
                         break;
                     case "creators":
                         getNextToken();
@@ -139,6 +141,130 @@ namespace Syntaxer
 
             classWAddonsGlobal = null;
             return classN;
+        }
+
+        private void ParseInheritance(Token token, ClassNode.InheritanceNode inheritance)
+        {
+            if (token.Type == TokenType.Delimeter && token.Value == "{")
+            {
+                getNextToken();
+                if (token.Type == TokenType.Identifier && token.Value == "NONE")
+                {
+                    getNextToken();
+                    if (token.Type == TokenType.Delimeter && token.Value == "}")
+                    {
+                        inheritance.NonConformance = true;
+                        getNextToken();
+                    }
+                    else
+                    {
+                        Debug.Print("Inheritance Non_conformance parse error");
+                    }
+                }
+                else
+                {
+                    Debug.Print("Inheritance Non_conformance parse error");
+                }
+            }
+
+            while (true)
+            {
+
+            }
+        }
+
+        private FeatureNameNode ParseFeatureName(Token token)
+        {
+            var fName = new FeatureNameNode();
+            if (currenToken.Type == TokenType.Identifier)
+            {
+                fName.Name = currenToken.Value;
+                getNextToken();
+            }
+            else
+            {
+                Debug.Print("Feature Name Parse Error 1");
+                return null;
+            }
+
+            while (true)
+            {
+                if (currenToken.Type == TokenType.ReservedWord && currenToken.Value == "alias")
+                {
+                    getNextToken();
+                }
+                else
+                {
+                    break;
+                }
+
+                if (currenToken.Type==TokenType.Delimeter && currenToken.Value == "\"")
+                {
+                    getNextToken();
+                }
+                else
+                {
+                    Debug.Print("Feature Name Parse Error 2");
+                    return null;
+                }
+                
+                if (currenToken.Type == TokenType.Delimeter && currenToken.Value == "[")//Тут мб проще
+                {
+                    getNextToken();
+                    if (currenToken.Type == TokenType.Delimeter && currenToken.Value == "]")
+                    {
+                        getNextToken();
+                        fName.AliasName = "[]";
+                    }
+                    else
+                    {
+                        Debug.Print("Feature Name Parse Error 3");
+                        return null;
+                    }
+                }
+                else if(currenToken.Type == TokenType.Operator && ReservedWords.Operators.Any(x => x == currenToken.Value))
+                {
+                    fName.AliasName = currenToken.Value;
+                    getNextToken();
+                }
+                else
+                {
+                    Debug.Print("Feature Name Parse Error 4");
+                    return null;
+                }
+                
+                if (currenToken.Type == TokenType.Delimeter && currenToken.Value == "\"")
+                {
+                    getNextToken();
+                }
+                else
+                {
+                    Debug.Print("Feature Name Parse Error 5");
+                    return null;
+                }
+
+                if (currenToken.Type == TokenType.ReservedWord && currenToken.Value == "convert")
+                {
+                    fName.Convert = true;
+                    getNextToken();
+                }
+            }
+
+            return fName;
+        }
+
+        private string ParseObsolete(Token token)
+        {
+            if (currenToken.Type == TokenType.Constant)
+            {
+                var returnValue = currenToken.Value;
+                getNextToken();
+                return returnValue;
+            }
+
+            Debug.Print("Мусор после метки obsolete");
+            getNextToken();
+            return null;
         }
 
         private void ParseNote(Token token, ClassNode.NoteNode notes)
