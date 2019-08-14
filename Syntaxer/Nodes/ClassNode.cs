@@ -46,21 +46,19 @@ namespace Syntaxer.Nodes
 
         public class InheritanceNode : BaseNode
         {
-            public List<string> NoteNames;
-            public List<List<string>> NoteContents;
+
 
             public InheritanceNode()
             {
-                NoteNames = new List<string>();
-                NoteContents = new List<List<string>>();
+
             }
 
             public bool NonConformance { get; set; } = false;
+            public FeatureNameNode Anchor { get; set; }
 
             public void Add(string name, List<string> content)
             {
-                NoteNames.Add(name);
-                NoteContents.Add(content);
+
             }
         }
 

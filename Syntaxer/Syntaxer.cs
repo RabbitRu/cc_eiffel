@@ -169,8 +169,87 @@ namespace Syntaxer
 
             while (true)
             {
-
+                ParseType(currenToken);
             }
+        }
+
+        private void ParseType(Token token)
+        {
+            TypeNode tNode = new TypeNode();
+
+            {//TupleType
+                TupleNode tuple = ParseTupleNode(token);
+            }
+
+            {//ClassType
+                tNode.AttachmentMark = ParseAttachmentMark(currenToken);
+                if (currenToken.Type == TokenType.Identifier)
+                {
+                    tNode.ClassName = currenToken.Value;
+                    getNextToken();
+                }else { Debug.Print("Types class_type parse error"); }
+
+                //todo: Проверить ActualGenerics
+            }
+
+            {//Anchored
+                tNode.AttachmentMark = ParseAttachmentMark(currenToken);
+
+                if (currenToken.Type == TokenType.ReservedWord && currenToken.Value == "like")
+                {
+
+                }
+                else
+                {
+                    Debug.Print("Types anchored parse error");
+                }
+
+                if (currenToken.Type == TokenType.ReservedWord && currenToken.Value == "Current")
+                {
+                    tNode.Anchor = new FeatureNameNode {Name = "Current"};
+                }
+                else
+                {
+                    tNode.Anchor = ParseFeatureName(currenToken);
+                }
+            }
+        }
+
+        private TupleNode ParseTupleNode(Token token)
+        {
+            TupleNode tpl = new TupleNode();
+            if (token.Type == TokenType.ReservedWord && token.Value == "TUPLE")
+            {
+                getNextToken();
+            }
+            else
+            {
+                Debug.Print("Tuple parse error");
+                return null;
+            }
+
+            if (currenToken.Type == TokenType.Delimeter && currenToken.Value == "[")
+            {
+                while (currenToken.Type !=TokenType.Delimeter && currenToken.Value == "]")
+                {
+                    
+                }
+            }
+
+            return tpl;
+        }
+
+        private string ParseAttachmentMark(Token token)
+        {
+            if (token.Type == TokenType.Delimeter && token.Value == "!" ||
+                token.Type == TokenType.Delimeter && token.Value == "?")
+            {//Attachment mark
+                var returnValue = currenToken.Value;
+                getNextToken();
+                return returnValue;
+            }
+
+            return null;
         }
 
         private FeatureNameNode ParseFeatureName(Token token)
