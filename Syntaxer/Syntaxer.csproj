@@ -50,6 +50,8 @@
     <Compile Include="Nodes\FuncCallNode.cs" />
     <Compile Include="Nodes\FunctionNode.cs" />
     <Compile Include="Nodes\ConstantValueNode.cs" />
+    <Compile Include="Nodes\FormalArgumentNode.cs" />
+    <Compile Include="Nodes\TypeNode.cs" />
     <Compile Include="Nodes\VariableNode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

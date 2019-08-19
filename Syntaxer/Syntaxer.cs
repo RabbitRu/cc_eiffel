@@ -1,11 +1,9 @@
-﻿using System;
+﻿using Lexer;
+using Syntaxer.Nodes;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Lexer;
-using Syntaxer.Nodes;
 
 namespace Syntaxer
 {
@@ -13,51 +11,63 @@ namespace Syntaxer
     {
         private List<Token> source;
         private int currentTokenNumber = 0;
-        private Token currenToken;
+        private Token currentToken;
         public RootNode Root = new RootNode();
         private ClassNode classWAddonsGlobal = null;
+        private Stack<int> states = new Stack<int>();
+
+        private void saveState()
+        {
+            states.Push(currentTokenNumber);
+        }
+
+        private Token loadState()
+        {
+            currentTokenNumber = states.Pop();
+            currentToken = source[currentTokenNumber];
+            return currentToken;
+        }
 
         private Token getNextToken()
         {
             if (currentTokenNumber >= source.Count)
             {
-                currenToken = null;
+                currentToken = null;
                 return null;
             }
 
-            currenToken = source[currentTokenNumber];
+            currentToken = source[currentTokenNumber];
             currentTokenNumber++;
-            return currenToken;
+            return currentToken;
         }
 
         public void BuildAST(List<Token> tokens)
         {
             source = tokens;
             getNextToken();
-            while (currentTokenNumber<tokens.Count)
+            while (currentTokenNumber < tokens.Count)
             {
                 Root.Children.Add(ParseExpression());
             }
-
         }
 
         public BaseNode ParseExpression()
         {
             BaseNode returnValue = null;
 
-            switch (currenToken.Type)
+            switch (currentToken.Type)
             {
                 case TokenType.Constant:
-                    returnValue = ParseConstant(currenToken);
+                    returnValue = ParseConstant(currentToken);
                     break;
                 case TokenType.Delimeter:
-                    returnValue = ParseDelimeter(currenToken);
+                    returnValue = ParseDelimeter(currentToken);
                     break;
                 case TokenType.Identifier:
-                    returnValue = ParseIdentifier(currenToken);
+                    returnValue = ParseIdentifier(currentToken);
                     break;
                 case TokenType.ReservedWord:
-                    (returnValue, classWAddonsGlobal) = ParseReservedWords(currenToken, classWAddonsGlobal);
+                    (returnValue, classWAddonsGlobal) = ParseReservedWords(currentToken, classWAddonsGlobal);
                     break;
                 default:
                     getNextToken();
@@ -72,11 +82,11 @@ namespace Syntaxer
             BaseNode returnValue = null;
             switch (token.Value)
             {
-                case "class"://deferred | expanded | frozen
+                case "class": //deferred | expanded | frozen
                     getNextToken();
-                    returnValue = ParseClass(currenToken, classWAddons);
+                    returnValue = ParseClass(currentToken, classWAddons);
                     break;
-                case "frozen"://headers
+                case "frozen": //headers
                 case "expanded":
                 case "deferred":
                     classWAddons = classWAddons ?? new ClassNode();
@@ -86,7 +96,7 @@ namespace Syntaxer
                 case "note":
                     getNextToken();
                     classWAddons = classWAddons ?? new ClassNode();
-                    ParseNote(currenToken, classWAddons.Notes);
+                    ParseNote(currentToken, classWAddons.Notes);
                     break;
                 default:
                     getNextToken();
@@ -104,21 +114,21 @@ namespace Syntaxer
             classN.Name = token.Value;
             getNextToken();
 
-            while (currenToken != null && currenToken.Value != "end")
+            while (currentToken != null && currentToken.Value != "end")
             {
-                switch (currenToken.Value)
+                switch (currentToken.Value)
                 {
                     case "obsolete":
                         getNextToken();
-                        classN.Obsolete = ParseObsolete(currenToken);
+                        classN.Obsolete = ParseObsolete(currentToken);
                         break;
                     case "note":
                         getNextToken();
-                        ParseNote(currenToken, classN.Notes);
+                        ParseNote(currentToken, classN.Notes);
                         break;
                     case "inheritance":
                         getNextToken();
-                        ParseInheritance(currenToken, classN.Inheritance);
+                        ParseInheritance(currentToken, classN.Inheritance);
                         break;
                     case "creators":
                         getNextToken();
@@ -136,7 +146,6 @@ namespace Syntaxer
                         ParseExpression();
                         break;
                 }
-
             }
 
             classWAddonsGlobal = null;
@@ -169,50 +178,57 @@ namespace Syntaxer
 
             while (true)
             {
-                ParseType(currenToken);
+                ParseType(currentToken);
             }
         }
 
-        private void ParseType(Token token)
+        private TypeNode ParseType(Token token)
         {
             TypeNode tNode = new TypeNode();
 
-            {//TupleType
-                TupleNode tuple = ParseTupleNode(token);
+            {
+                //TupleType
+                TupleNode tuple = ParseTupleNode(token); //todo: Реализовать
             }
 
-            {//ClassType
-                tNode.AttachmentMark = ParseAttachmentMark(currenToken);
-                if (currenToken.Type == TokenType.Identifier)
+            {
+                //ClassType
+                tNode.AttachmentMark = ParseAttachmentMark(currentToken);
+                if (currentToken.Type == TokenType.Identifier)
                 {
-                    tNode.ClassName = currenToken.Value;
+                    tNode.ClassName = currentToken.Value;
                     getNextToken();
-                }else { Debug.Print("Types class_type parse error"); }
+                }
+                else
+                {
+                    Debug.Print("Types class_type parse error");
+                }
 
                 //todo: Проверить ActualGenerics
             }
 
-            {//Anchored
-                tNode.AttachmentMark = ParseAttachmentMark(currenToken);
+            {
+                //Anchored
+                tNode.AttachmentMark = ParseAttachmentMark(currentToken);
 
-                if (currenToken.Type == TokenType.ReservedWord && currenToken.Value == "like")
+                if (currentToken.Type == TokenType.ReservedWord && currentToken.Value == "like")
                 {
-
                 }
                 else
                 {
                     Debug.Print("Types anchored parse error");
                 }
 
-                if (currenToken.Type == TokenType.ReservedWord && currenToken.Value == "Current")
+                if (currentToken.Type == TokenType.ReservedWord && currentToken.Value == "Current")
                 {
                     tNode.Anchor = new FeatureNameNode {Name = "Current"};
                 }
                 else
                 {
-                    tNode.Anchor = ParseFeatureName(currenToken);
+                    tNode.Anchor = ParseFeatureName(currentToken);
                 }
             }
+            return tNode;
         }
 
         private TupleNode ParseTupleNode(Token token)
@@ -228,23 +244,88 @@ namespace Syntaxer
                 return null;
             }
 
-            if (currenToken.Type == TokenType.Delimeter && currenToken.Value == "[")
+            if (currentToken.Type == TokenType.Delimeter && currentToken.Value == "[")
             {
-                while (currenToken.Type !=TokenType.Delimeter && currenToken.Value == "]")
+                while (currentToken.Type != TokenType.Delimeter && currentToken.Value == "]")
                 {
-                    
+                    ParseActualGenericParameters(currentToken);
+                    ParseFormalArgument(currentToken);
                 }
             }
 
             return tpl;
         }
 
+        private void ParseFormalArgument(Token token)
+        {
+            List<EntityDeclarationList> entityDeclarationList = new List<EntityDeclarationList>();
+            if (currentToken.Type == TokenType.Delimeter && currentToken.Value == "(")
+            {
+                while (currentToken.Type != TokenType.Delimeter && currentToken.Value == ")")
+                {
+                    entityDeclarationList.Add(ParseEntityDeclarationsList(currentToken));
+                }
+            }
+        }
+
+        private EntityDeclarationList ParseEntityDeclarationsList(Token token)
+        {
+            var entityDeclarationList = new EntityDeclarationList();
+            var firsttime1 = true;
+            do
+            {
+                if (!firsttime1)
+                    getNextToken();
+                else
+                    firsttime1 = false;
+
+                (List<string> IdentifierList, TypeNode Type) entityDeclarationGroup;
+                entityDeclarationGroup.IdentifierList = new List<string>();
+                var firsttime2 = true;
+                do
+                {
+                    if (!firsttime2)
+                        getNextToken();
+                    else
+                        firsttime2 = false;
+
+                    if (currentToken.Type == TokenType.Identifier)
+                    {
+                        entityDeclarationGroup.IdentifierList.Add(currentToken.Value);
+                        getNextToken();
+                    }
+                    else
+                    {
+                        Debug.Print("EDL parse error");
+                    }
+                } while (currentToken.Type != TokenType.Delimeter && currentToken.Value == ",");
+
+                if (currentToken.Type == TokenType.Delimeter && currentToken.Value == ":")
+                {
+                    getNextToken();
+                }
+                else
+                {
+                    Debug.Print("EDL parse error");
+                }
+
+                entityDeclarationGroup.Type = ParseType(currentToken);
+            } while (currentToken.Type != TokenType.Delimeter && currentToken.Value == ";");
+
+            return null;
+        }
+
+        private void ParseActualGenericParameters(Token token)
+        {
+        }
+
         private string ParseAttachmentMark(Token token)
         {
             if (token.Type == TokenType.Delimeter && token.Value == "!" ||
                 token.Type == TokenType.Delimeter && token.Value == "?")
-            {//Attachment mark
-                var returnValue = currenToken.Value;
+            {
+                //Attachment mark
+                var returnValue = currentToken.Value;
                 getNextToken();
                 return returnValue;
             }
@@ -255,9 +336,9 @@ namespace Syntaxer
         private FeatureNameNode ParseFeatureName(Token token)
         {
             var fName = new FeatureNameNode();
-            if (currenToken.Type == TokenType.Identifier)
+            if (currentToken.Type == TokenType.Identifier)
             {
-                fName.Name = currenToken.Value;
+                fName.Name = currentToken.Value;
                 getNextToken();
             }
             else
@@ -268,7 +349,7 @@ namespace Syntaxer
 
             while (true)
             {
-                if (currenToken.Type == TokenType.ReservedWord && currenToken.Value == "alias")
+                if (currentToken.Type == TokenType.ReservedWord && currentToken.Value == "alias")
                 {
                     getNextToken();
                 }
@@ -277,7 +358,7 @@ namespace Syntaxer
                     break;
                 }
 
-                if (currenToken.Type==TokenType.Delimeter && currenToken.Value == "\"")
+                if (currentToken.Type == TokenType.Delimeter && currentToken.Value == "\"")
                 {
                     getNextToken();
                 }
@@ -286,11 +367,11 @@ namespace Syntaxer
                     Debug.Print("Feature Name Parse Error 2");
                     return null;
                 }
-                
-                if (currenToken.Type == TokenType.Delimeter && currenToken.Value == "[")//Тут мб проще
+
+                if (currentToken.Type == TokenType.Delimeter && currentToken.Value == "[") //Тут мб проще
                 {
                     getNextToken();
-                    if (currenToken.Type == TokenType.Delimeter && currenToken.Value == "]")
+                    if (currentToken.Type == TokenType.Delimeter && currentToken.Value == "]")
                     {
                         getNextToken();
                         fName.AliasName = "[]";
@@ -301,9 +382,10 @@ namespace Syntaxer
                         return null;
                     }
                 }
-                else if(currenToken.Type == TokenType.Operator && ReservedWords.Operators.Any(x => x == currenToken.Value))
+                else if (currentToken.Type == TokenType.Operator &&
+                         ReservedWords.Operators.Any(x => x == currentToken.Value))
                 {
-                    fName.AliasName = currenToken.Value;
+                    fName.AliasName = currentToken.Value;
                     getNextToken();
                 }
                 else
@@ -311,8 +393,8 @@ namespace Syntaxer
                     Debug.Print("Feature Name Parse Error 4");
                     return null;
                 }
-                
-                if (currenToken.Type == TokenType.Delimeter && currenToken.Value == "\"")
+
+                if (currentToken.Type == TokenType.Delimeter && currentToken.Value == "\"")
                 {
                     getNextToken();
                 }
@@ -322,7 +404,7 @@ namespace Syntaxer
                     return null;
                 }
 
-                if (currenToken.Type == TokenType.ReservedWord && currenToken.Value == "convert")
+                if (currentToken.Type == TokenType.ReservedWord && currentToken.Value == "convert")
                 {
                     fName.Convert = true;
                     getNextToken();
@@ -334,9 +416,9 @@ namespace Syntaxer
 
         private string ParseObsolete(Token token)
         {
-            if (currenToken.Type == TokenType.Constant)
+            if (currentToken.Type == TokenType.Constant)
             {
-                var returnValue = currenToken.Value;
+                var returnValue = currentToken.Value;
                 getNextToken();
                 return returnValue;
             }
@@ -350,20 +432,22 @@ namespace Syntaxer
         {
             string nName;
             List<string> nContent;
-            while (currenToken.Type == TokenType.Identifier)
-            {// nName: nContent
-                if (currenToken.Type==TokenType.Identifier)
+            while (currentToken.Type == TokenType.Identifier)
+            {
+                // nName: nContent
+                if (currentToken.Type == TokenType.Identifier)
                 {
-                    nName = currenToken.Value;
+                    nName = currentToken.Value;
                 }
                 else
                 {
                     Debug.Print("Note parse error1");
                     return;
                 }
+
                 getNextToken();
 
-                if (currenToken.Type != TokenType.Delimeter || currenToken.Value != ":")
+                if (currentToken.Type != TokenType.Delimeter || currentToken.Value != ":")
                 {
                     return;
                 }
@@ -373,9 +457,9 @@ namespace Syntaxer
 
                 while (true)
                 {
-                    if (currenToken.Type == TokenType.Constant || currenToken.Type == TokenType.Identifier)
+                    if (currentToken.Type == TokenType.Constant || currentToken.Type == TokenType.Identifier)
                     {
-                        nContent.Add(currenToken.Value);
+                        nContent.Add(currentToken.Value);
                     }
                     else
                     {
@@ -385,16 +469,16 @@ namespace Syntaxer
 
                     getNextToken();
 
-                    if (currenToken.Type == TokenType.Delimeter && currenToken.Value == ",")
+                    if (currentToken.Type == TokenType.Delimeter && currentToken.Value == ",")
                     {
-                        nContent.Add(currenToken.Value);
+                        nContent.Add(currentToken.Value);
                         getNextToken();
                     }
                     else
-                    {//Норма
+                    {
+                        //Норма
                         break;
                     }
-
                 }
 
                 notes.Add(nName, nContent);
@@ -405,15 +489,15 @@ namespace Syntaxer
         {
             string iden = identidier.Value;
 
-            getNextToken();// получаем идентификатор.
+            getNextToken(); // получаем идентификатор.
 
-            if (currenToken.Value[0] != '(')// Ссылка на переменную.
+            if (currentToken.Value[0] != '(') // Ссылка на переменную.
                 return new VariableNode(iden);
 
             // Вызов функции.
-            getNextToken();  // получаем (
+            getNextToken(); // получаем (
             List<BaseNode> args = new List<BaseNode>();
-            if (currenToken.Value[0] != ')')
+            if (currentToken.Value[0] != ')')
             {
                 while (true)
                 {
@@ -421,9 +505,9 @@ namespace Syntaxer
                     if (arg == null) return null;
                     args.Add(arg);
 
-                    if (currenToken.Value[0] == ')') break;
+                    if (currentToken.Value[0] == ')') break;
 
-                    if (currenToken.Value[0] != ',')
+                    if (currentToken.Value[0] != ',')
                     {
                         Debug.Print("Expected ')' or ',' in argument list");
                         return null;
@@ -436,7 +520,7 @@ namespace Syntaxer
             // получаем ')'.
             getNextToken();
 
-            return new FunctionNode(new PrototypeNode(iden,args), ParseExpression());
+            return new FunctionNode(new PrototypeNode(iden, args), ParseExpression());
         }
 
         private BaseNode ParseDelimeter(Token currenToken)
@@ -455,16 +539,15 @@ namespace Syntaxer
 
         public BaseNode ParseIdentfierExpr()
         {
-            return new VariableNode("","");
+            return new VariableNode("", "");
         }
 
         public int GetOpPriopity(Token tk)
         {
-            if(tk.Type!=TokenType.Operator)
+            if (tk.Type != TokenType.Operator)
                 throw new Exception();
 
             return ReservedWords.OpPriority[tk.Value];
         }
-
     }
 }
