@@ -54,7 +54,7 @@ namespace Syntaxer.Nodes
             }
 
             public bool NonConformance { get; set; } = false;
-            public FeatureNameNode Anchor { get; set; }
+            public ClassTypeNode ClassType { get; set; }
 
             public void Add(string name, List<string> content)
             {
