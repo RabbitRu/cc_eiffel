@@ -7,8 +7,8 @@ namespace Syntaxer.Nodes
         public string Name { get; set; }
         public string Obsolete { get; set; }
         public InheritanceNode Inheritance { get; }
-        public List<string> Creators { get; }
-        public List<string> Converters { get; }
+        public List<FeatureNameNode> Creators { get; }
+        public List<(FeatureNameNode, List<TypeNode>)> Converters { get; }
         public List<string> Features { get; }
         public List<string> Headers { get; }
         public NoteNode Notes { get; }
@@ -18,14 +18,14 @@ namespace Syntaxer.Nodes
         {
             Inheritance = new InheritanceNode();
             Headers = new List<string>();
-            Creators = new List<string>();
-            Converters = new List<string>();
+            Creators = new List<FeatureNameNode>();
+            Converters = new List<(FeatureNameNode, List<TypeNode>)>();
             Features = new List<string>();
             Notes = new NoteNode();
             Invariant = new List<string>();
         }
 
-        public class NoteNode :BaseNode
+        public class NoteNode : BaseNode
         {
             public List<string> NoteNames { get; }
             public List<List<string>> NoteContents { get; }
@@ -46,20 +46,8 @@ namespace Syntaxer.Nodes
 
         public class InheritanceNode : BaseNode
         {
-
-
-            public InheritanceNode()
-            {
-
-            }
-
             public bool NonConformance { get; set; } = false;
-            public ClassTypeNode ClassType { get; set; }
-
-            public void Add(string name, List<string> content)
-            {
-
-            }
+            public List<ClassTypeNode> ParentList { get; set; }
         }
 
     }

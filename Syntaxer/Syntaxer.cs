@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 
 namespace Syntaxer
 {
@@ -137,9 +138,11 @@ namespace Syntaxer
                         break;
                     case "creators":
                         getNextToken();
+                        ParseCreators(CurrentToken, classN.Creators);
                         break;
                     case "converters":
                         getNextToken();
+                        ParseConverters(CurrentToken, classN.Converters);
                         break;
                     case "features":
                         getNextToken();
@@ -155,6 +158,37 @@ namespace Syntaxer
 
             ClassWAddonsGlobal = null;
             return classN;
+        }
+
+        private void ParseConverters(Token currentToken, List<(FeatureNameNode, List<TypeNode>)> classNConverters)
+        {
+            classNConverters = ParseList(",", ParseConverter);
+        }
+
+        private (FeatureNameNode, List<TypeNode>) ParseConverter(Token arg)
+        {
+            FeatureNameNode fNode = ParseFeatureName(CurrentToken);
+            List<TypeNode> tNode = null;
+            if (CurrentToken.Value == ":" && CurrentToken.Type == TokenType.Delimeter)
+            {
+                getNextToken();
+                tNode = (List<TypeNode>) ParseBraces("{","}", ParseTypeList);
+            }
+            else
+            {
+                tNode = (List<TypeNode>) ParseBraces("(", ")",
+                    delegate(Token arg1) { return ParseBraces("{", "}", ParseTypeList); });
+            }
+
+            return (fNode, tNode);
+        }
+
+        private void ParseCreators(Token currentToken, List<FeatureNameNode> classNCreators)
+        {
+            if (currentToken.Type == TokenType.ReservedWord && currentToken.Value == "create")
+            {
+                classNCreators = ParseList(",", ParseFeatureName);
+            }
         }
 
         private void ParseInheritance(Token token, ClassNode.InheritanceNode inheritance)
@@ -179,7 +213,8 @@ namespace Syntaxer
                 {
                     Debug.Print("Inheritance Non_conformance parse error");
                 }
-                inheritance.Anchor
+
+                inheritance.ParentList = ParseList(";", ParseClassTypeNode);
             }
 
             while (true)
@@ -203,7 +238,7 @@ namespace Syntaxer
 
                 //ClassType
                 ClassTypeNode classType = ParseClassTypeNode(token);
-                if(classType==null)
+                if (classType == null)
                 {
                     //Anchored
                     tNode.AttachmentMark = ParseAttachmentMark(CurrentToken);
@@ -639,6 +674,40 @@ namespace Syntaxer
                 throw new Exception();
 
             return ReservedWords.OpPriority[tk.Value];
+        }
+
+        public List<T> ParseList<T>(string delimeter, Func<Token, T> func)
+        {
+            var result = new List<T>();
+            do
+            {
+                result.Add(func.Invoke(CurrentToken));
+            } while (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == delimeter);
+
+            return result;
+        }
+
+        public object ParseBraces<T>(string braceStart, string braceEnd, Func<Token, T> func)
+        {
+            object result = null;
+            if(CurrentToken.Type==TokenType.Delimeter&& CurrentToken.Value==braceStart)
+            {
+                getNextToken();
+                result = func.Invoke(CurrentToken);
+            }
+            else
+            {
+                Debug.Print("Brace print error");
+                result = null;
+            }
+
+            if (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == braceEnd)
+            {
+                result = null;
+            }
+            
+
+            return result;
         }
     }
 }
