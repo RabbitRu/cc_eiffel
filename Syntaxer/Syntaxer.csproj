@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Nodes\ExpressionNode.cs" />
     <Compile Include="Nodes\FeatureNode.cs" />
     <Compile Include="Nodes\BaseNode.cs" />
     <Compile Include="Nodes\BinaryOperatorNode.cs" />

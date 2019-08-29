@@ -9,7 +9,7 @@ namespace Syntaxer.Nodes
         public InheritanceNode Inheritance { get; }
         public List<FeatureNameNode> Creators { get; }
         public List<(FeatureNameNode, List<TypeNode>)> Converters { get; }
-        public List<string> Features { get; }
+        public List<FeatureDeclarationNode> Features { get; }
         public List<string> Headers { get; }
         public NoteNode Notes { get; }
         public List<string> Invariant { get; }
@@ -20,7 +20,7 @@ namespace Syntaxer.Nodes
             Headers = new List<string>();
             Creators = new List<FeatureNameNode>();
             Converters = new List<(FeatureNameNode, List<TypeNode>)>();
-            Features = new List<string>();
+            Features = new List<FeatureDeclarationNode>();
             Notes = new NoteNode();
             Invariant = new List<string>();
         }

@@ -31,7 +31,14 @@ namespace Syntaxer
 
         private void popState()
         {
-            States.Pop();
+            try
+            {
+                States.Pop();
+            }
+            catch (Exception )
+            {
+                Debug.Print("Too much pop");
+            }
         }
 
         private Token getNextToken()
@@ -146,6 +153,7 @@ namespace Syntaxer
                         break;
                     case "features":
                         getNextToken();
+                        ParseFeatures(CurrentToken, classN.Features);
                         break;
                     case "invariant":
                         getNextToken();
@@ -160,6 +168,280 @@ namespace Syntaxer
             return classN;
         }
 
+        private void ParseFeatures(Token currentToken, List<FeatureDeclarationNode> classNFeatures)
+        {
+            if (CurrentToken.Value == "feature" && currentToken.Type == TokenType.ReservedWord)
+            {
+                List<FeatureDeclarationNode> fdNode = ParseList(";", ParseFeatureDeclaration);
+            }
+        }
+
+        private FeatureDeclarationNode ParseFeatureDeclaration(Token arg)
+        {
+            FeatureDeclarationNode result = new FeatureDeclarationNode();
+            List<(bool frozen, FeatureNameNode FeatureName)> nfNode = ParseList(",", //NewFeature
+                delegate
+                {
+                    bool frozen = false;
+                    if (CurrentToken.Type == TokenType.ReservedWord && CurrentToken.Value == "frozen")
+                    {
+                        frozen = true;
+                        getNextToken();
+                    }
+
+                    return (frozen, (FeatureNameNode) ParseBraces("{", "}", ParseTypeList));
+                });
+
+            result.NewFeatureList = nfNode;
+
+            saveState();
+            var fArgs = ParseFormalArguments(CurrentToken);
+            if (fArgs == null)
+                loadState();
+            else
+                popState();
+
+            saveState();
+            Func<(TypeNode, FeatureNameNode)> qMarkFunc = () => //QueryMark
+            {
+                saveState();
+                if (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == ":")
+                {
+                    getNextToken();
+                }
+                else
+                {
+                    loadState();
+                    return (null, null);
+                }
+
+                TypeNode tNode = ParseType(CurrentToken);
+                if (tNode == null)
+                {
+                    loadState();
+                    return (null, null);
+                }
+                else
+                {
+                    popState();
+                }
+
+                FeatureNameNode fNode = null;
+                saveState();
+                if (CurrentToken.Value == "assign" && CurrentToken.Type == TokenType.ReservedWord)
+                {
+                    getNextToken();
+                    fNode = ParseFeatureName(CurrentToken);
+                    if (fNode == null)
+                    {
+                        loadState();
+                    }
+                }
+                else
+                {
+                    loadState();
+                }
+
+                return (tNode, fNode);
+            };
+            var qMark = qMarkFunc.Invoke();
+            result.QueryMarkType = qMark.Item1;
+            result.QueryMarkAssigner = qMark.Item2;
+
+            saveState(); //ExplicitValue
+            if (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == "=")
+            {
+                getNextToken();
+                if (CurrentToken.Type == TokenType.Constant)
+                {
+                    result.ExplicitValue = CurrentToken.Value;
+                    popState();
+                }
+
+                loadState();
+            }
+
+            if (CurrentToken.Type == TokenType.ReservedWord && CurrentToken.Value == "obsolete")
+            {
+                getNextToken();
+                result.Obsolete = ParseObsolete(CurrentToken);
+            }
+
+            //Attribure o routine
+            ParseFeatureBody(CurrentToken);
+
+            return null;
+        }
+
+        private void ParseFeatureBody(Token currentToken)
+        {
+            bool deffered = false;
+            if (CurrentToken.Type == TokenType.ReservedWord && CurrentToken.Value == "local")
+            {
+                getNextToken();
+                var x = ParseEntityDeclarationsList(CurrentToken);
+            }
+
+            if (CurrentToken.Type == TokenType.ReservedWord && CurrentToken.Value == "deffered")
+            {
+                getNextToken();
+                deffered = true;
+            }
+
+            //External нету
+            if (CurrentToken.Type == TokenType.ReservedWord && CurrentToken.Value == "do") //Routine Mark
+            {
+                getNextToken();
+            }
+            else if (CurrentToken.Type == TokenType.ReservedWord && CurrentToken.Value == "once")
+            {
+                getNextToken();
+                List<string> x = (List<string>) ParseBraces("(", ")",
+                    delegate { return ParseList(",", arg => CurrentToken.Value); });
+            }
+            else
+            {
+                return;
+            }
+
+            ParseCompound(CurrentToken);
+        }
+
+        private void ParseCompound(Token token)
+        {
+            var x = ParseList(";",
+                delegate { return ParseInstruction(CurrentToken); });
+        }
+
+        private object ParseInstruction(Token token)
+        {
+            //Creation Instruction
+            TypeNode ExplicitCreationType;
+            if (CurrentToken.Type == TokenType.ReservedWord && CurrentToken.Value == "create")
+            {
+                getNextToken();
+                ExplicitCreationType = (TypeNode) ParseBraces("{", "}", ParseType);
+            }
+
+            //Variable
+            FeatureNameNode Variable = ParseFeatureNameOrReservedWord(CurrentToken, "Result");
+
+            object x;
+            if (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == ".")
+            {
+                getNextToken();
+                x = ParseUnqualifiedCall(CurrentToken);
+            }
+
+
+            return null;
+        }
+
+        private object ParseUnqualifiedCall(Token token)
+        {
+            FeatureNameNode fNode = ParseFeatureName(CurrentToken);
+            object AArgs = ParseActualArguments(CurrentToken);
+            return null;
+        }
+
+        private object ParseActualArguments(Token currentToken)
+        {
+            return ParseBraces("(", ")", ParseExpression);
+        }
+
+        private ExpressionNode ParseExpression(Token arg)
+        {
+            if (true)//Basic
+            {
+                //ReadOnly
+                FeatureNameNode fNode = ParseFeatureNameOrReservedWord(CurrentToken, "Current");
+                //Local
+                if (fNode == null)
+                {
+                    fNode = ParseFeatureNameOrReservedWord(CurrentToken, "Result");
+                }
+
+                if (fNode == null)
+                {
+                    ParseFeatureCall(CurrentToken);
+                }
+            }
+            else//Special
+            {
+
+            }
+            return null;
+        }
+
+        private BaseNode ParseFeatureCall(Token token)
+        {
+            //ObjectCall
+            //Target
+            //ReadOnly
+            saveState();
+            BaseNode targetNode = ParseFeatureNameOrReservedWord(CurrentToken, "Current");
+            //Local
+            if (targetNode == null)
+            {
+                loadState();
+                saveState();
+                targetNode = ParseFeatureNameOrReservedWord(CurrentToken, "Result");
+            }
+            //Call
+            if (targetNode == null)
+            {
+                loadState();
+                saveState();
+                targetNode = ParseFeatureCall(CurrentToken);
+            }
+            //Parenthesized_target
+            if (targetNode == null)
+            {
+                loadState();
+                saveState();
+                targetNode = (BaseNode) ParseBraces("(", ")", ParseExpression);
+            }
+
+            if (targetNode != null)
+            {
+                popState();
+                if (CurrentToken.Value == "." && CurrentToken.Type == TokenType.Delimeter)
+                {
+                    getNextToken();
+                }
+                else
+                {
+                    Debug.Print("FeatureCalls parse error");
+                    return null;
+                }
+            }
+            else
+            {
+                loadState();
+            }
+
+            FeatureNameNode fNode = ParseFeatureName(CurrentToken);
+            object actuals = ParseActualArguments(CurrentToken);
+
+        }
+
+        private FeatureNameNode ParseFeatureNameOrReservedWord(Token currentToken, string reservedWord)
+        {//Identifier\FeatureName\ReservedWord
+            FeatureNameNode fNode = ParseFeatureName(CurrentToken);
+            if (CurrentToken.Value == reservedWord && CurrentToken.Type == TokenType.ReservedWord)
+            {
+                fNode = new FeatureNameNode();
+                fNode.Name = reservedWord;
+            }
+            else
+            {
+                Debug.Print("Identifier\\FeatureName\\ReservedWord parse error");
+                return null;
+            }
+
+            return fNode;
+        }
+
         private void ParseConverters(Token currentToken, List<(FeatureNameNode, List<TypeNode>)> classNConverters)
         {
             classNConverters = ParseList(",", ParseConverter);
@@ -172,12 +454,12 @@ namespace Syntaxer
             if (CurrentToken.Value == ":" && CurrentToken.Type == TokenType.Delimeter)
             {
                 getNextToken();
-                tNode = (List<TypeNode>) ParseBraces("{","}", ParseTypeList);
+                tNode = (List<TypeNode>) ParseBraces("{", "}", ParseTypeList);
             }
             else
             {
                 tNode = (List<TypeNode>) ParseBraces("(", ")",
-                    delegate(Token arg1) { return ParseBraces("{", "}", ParseTypeList); });
+                    delegate { return ParseBraces("{", "}", ParseTypeList); });
             }
 
             return (fNode, tNode);
@@ -286,8 +568,6 @@ namespace Syntaxer
                 return null;
             }
 
-            ctNode.ActualGenerics = ParseActualGenericParameters(CurrentToken);
-            //todo: Проверить ActualGenerics
             return ctNode;
         }
 
@@ -354,7 +634,7 @@ namespace Syntaxer
             return typeList;
         }
 
-        private FormalArgumentNode ParseFormalArgument(Token token)
+        private FormalArgumentNode ParseFormalArguments(Token token)
         {
             FormalArgumentNode faNode = new FormalArgumentNode();
             faNode.EntityDeclarationList = new EntityDeclarationList();
@@ -420,31 +700,7 @@ namespace Syntaxer
 
             return entityDeclarationList;
         }
-
-        private List<TypeNode> ParseActualGenericParameters(Token token)
-        {
-            List<TypeNode> typeNodes = null;
-            if (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == "[")
-            {
-                getNextToken();
-                typeNodes = ParseTypeList(CurrentToken);
-                if (CurrentToken.Type != TokenType.Delimeter && CurrentToken.Value == "]")
-                {
-                    getNextToken();
-                }
-                else
-                {
-                    Debug.Print("ActualGenericParameters parse error");
-                }
-            }
-            else
-            {
-                Debug.Print("ActualGenericParameters parse error");
-            }
-
-            return typeNodes;
-        }
-
+        
         private string ParseAttachmentMark(Token token)
         {
             if (token.Type == TokenType.Delimeter && token.Value == "!" ||
@@ -679,10 +935,12 @@ namespace Syntaxer
         public List<T> ParseList<T>(string delimeter, Func<Token, T> func)
         {
             var result = new List<T>();
-            do
+            result.Add(func.Invoke(CurrentToken));
+            while (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == delimeter)
             {
                 result.Add(func.Invoke(CurrentToken));
-            } while (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == delimeter);
+                getNextToken();
+            }
 
             return result;
         }
@@ -690,7 +948,7 @@ namespace Syntaxer
         public object ParseBraces<T>(string braceStart, string braceEnd, Func<Token, T> func)
         {
             object result = null;
-            if(CurrentToken.Type==TokenType.Delimeter&& CurrentToken.Value==braceStart)
+            if (CurrentToken.Type == TokenType.Delimeter && CurrentToken.Value == braceStart)
             {
                 getNextToken();
                 result = func.Invoke(CurrentToken);
@@ -705,7 +963,7 @@ namespace Syntaxer
             {
                 result = null;
             }
-            
+
 
             return result;
         }
